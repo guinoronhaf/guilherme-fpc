@@ -1,0 +1,29 @@
+1. Execução da solução serial
+
+Não houve alteração na ordem de execução das tarefas. Em uma solução serial, a ordem de execução das instruções é determinística, não dependendo da política de escalonamento do Sistema Operacional. 
+
+Segue um exemplo do log de execução:
+
+[main] --- INÍCIO DO PROGRAMA SERIAL JAVA ---
+[main] INÍCIO: Configuração de Logs.
+[main] FIM: Configuração de Logs concluída.
+[main] INÍCIO: Verificação de Recursos.
+[main] Verificando Recurso 1 (Duração: 2252ms)...
+[main] Verificando Recurso 2 (Duração: 2130ms)...
+[main] Verificando Recurso 3 (Duração: 2219ms)...
+[main] Verificando Recurso 4 (Duração: 1579ms)...
+[main] Verificando Recurso 5 (Duração: 2862ms)...
+[main] FIM: Verificação concluída.
+[main] --- FIM DO PROGRAMA SERIAL JAVA ---
+
+real	0m15.113s
+user	0m0.065s
+sys	0m0.059s
+
+Percebe-se que inicialização de logs, na solução serial, ocorre SEMPRE antes (e sem interrupções) da verificações de Recursos, o que é justificado pelo caráter serial da execução.
+
+Após executar o código 5 vezes, tivemos os seguintes resultados:
+
+TEMPO MÁXIMO (real): 16,354s
+TEMPO MÍNIMO (real): 13,680s
+TEMPO MÉDIO (real): 14,763s

@@ -2,12 +2,30 @@ import java.lang.Thread;
 import java.lang.Runnable;
 import java.util.Random; // Importação necessária para tempo aleatório
 
-public class SimpleConcurrentSolution {
+public class SimpleConcurrentSolutionV2 {
+
+    private static class ResourceCheckTaskBigger implements Runnable {
+        
+        @Override
+        public void run() {
+            for (int i = 0; i < 5; i++) {
+                ResourceCheckTask checkInstance = new ResourceCheckTask(i);
+                Thread tCheck = new Thread(checkInstance, "check-thread-" + i);
+                tCheck.start();
+            }
+        }
+    }
 
     // 1.2. Tarefa de Verificação de Recursos (Classe Interna Não Anônima com TEMPO ALEATÓRIO)
     private static class ResourceCheckTask implements Runnable {
+
+        private Integer resourceId;
         
         private static final Random random = new Random();
+
+        public ResourceCheckTask(Integer resourceId) {
+            this.resourceId = resourceId;
+        }
 
         @Override
         public void run() {
@@ -15,18 +33,17 @@ public class SimpleConcurrentSolution {
 
             System.out.println("[" + currentThread.getName() + "] INÍCIO: Verificação de Recursos.");
 
-            for (int i = 1; i <= 5; i++) {
-                try {
+            try {
                     // Gera um valor aleatório entre 1000ms (1s) e 3000ms (3s)
                     int sleepTime = 1000 + random.nextInt(2000); 
-                    System.out.println("[" + currentThread.getName() + "] Verificando Recurso " + i + " (Duração: " + sleepTime + "ms)...");
+                    System.out.println("[" + currentThread.getName() + "] Verificando Recurso " + resourceId + " (Duração: " + sleepTime + "ms)...");
                     Thread.sleep(sleepTime); 
-                } catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                     System.err.println("[" + currentThread.getName() + "] Verificação interrompida.");
                     Thread.currentThread().interrupt();
                     return;
-                }
             }
+
             System.out.println("[" + currentThread.getName() + "] FIM: Verificação concluída.");
         }
     }
@@ -56,12 +73,11 @@ public class SimpleConcurrentSolution {
         Thread currentThread = Thread.currentThread();
         System.out.println("[" + currentThread.getName() + "] --- INÍCIO DO PROGRAMA JAVA ---");
 
-        // Criação das instâncias
-        ResourceCheckTask checkInstance = new ResourceCheckTask(); 
+        ResourceCheckTaskBigger checkInstanceBigger = new ResourceCheckTaskBigger();
 
         // Criação e Início das Threads
         Thread tLogs = new Thread(logSetupTask, "logs-thread"); //, "Setup-Logs");
-        Thread tCheck = new Thread(checkInstance, "check-thread"); //, "Check-Recursos");
+        Thread tCheck = new Thread(checkInstanceBigger, "check-thread-bigger"); //, "Check-Recursos");
 
         // Início da execução concorrente
         tLogs.start();
@@ -71,7 +87,7 @@ public class SimpleConcurrentSolution {
 
         try {
             tLogs.join();
-            tCheck.join();
+            tCheck.join(); 
         } catch (InterruptedException e) {
             System.err.println("[" + currentThread.getName() + "] interrompida.");
             Thread.currentThread().interrupt();

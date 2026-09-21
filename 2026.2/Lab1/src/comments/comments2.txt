@@ -1,0 +1,80 @@
+# Executando a solução concorrente
+
+Q1) Sim. Pode-se perceber que há concorrência explícita, já que alguma das threads pode ser interrompida para que a outra seja executada. Assim, o fluxo de execução não é determinístico, como na solução serial. Isso pode ser percebido através dos logs de 3 execuções:
+
+PRIMEIRA EXECUÇÃO
+[main] --- INÍCIO DO PROGRAMA JAVA ---
+[main] Inicialização de tarefas concorrentes solicitada.
+[Thread-0] INÍCIO: Configuração de Logs...
+[Thread-1] INÍCIO: Verificação de Recursos.
+[main] --- FIM DO PROGRAMA JAVA (Main terminou) ---
+[Thread-1] Verificando Recurso 1 (Duração: 2365ms)...
+[Thread-1] Verificando Recurso 2 (Duração: 2903ms)...
+[Thread-0] FIM: Configuração de Logs concluída.
+[Thread-1] Verificando Recurso 3 (Duração: 1843ms)...
+[Thread-1] Verificando Recurso 4 (Duração: 1217ms)...
+[Thread-1] Verificando Recurso 5 (Duração: 1264ms)...
+[Thread-1] FIM: Verificação concluída.
+
+real	0m9.656s
+user	0m0.064s
+sys	0m0.042s
+
+SEGUNDA EXECUÇÃO
+[main] --- INÍCIO DO PROGRAMA JAVA ---
+[Thread-0] INÍCIO: Configuração de Logs...
+[main] Inicialização de tarefas concorrentes solicitada.
+[Thread-1] INÍCIO: Verificação de Recursos.
+[main] --- FIM DO PROGRAMA JAVA (Main terminou) ---
+[Thread-1] Verificando Recurso 1 (Duração: 2226ms)...
+[Thread-1] Verificando Recurso 2 (Duração: 1275ms)...
+[Thread-1] Verificando Recurso 3 (Duração: 2863ms)...
+[Thread-0] FIM: Configuração de Logs concluída.
+[Thread-1] Verificando Recurso 4 (Duração: 1208ms)...
+[Thread-1] Verificando Recurso 5 (Duração: 1679ms)...
+[Thread-1] FIM: Verificação concluída.
+
+real	0m9.315s
+user	0m0.065s
+sys	0m0.041s
+
+TERCEIRA EXECUÇÃO
+[main] --- INÍCIO DO PROGRAMA JAVA ---
+[main] Inicialização de tarefas concorrentes solicitada.
+[Thread-0] INÍCIO: Configuração de Logs...
+[Thread-1] INÍCIO: Verificação de Recursos.
+[main] --- FIM DO PROGRAMA JAVA (Main terminou) ---
+[Thread-1] Verificando Recurso 1 (Duração: 1104ms)...
+[Thread-1] Verificando Recurso 2 (Duração: 2288ms)...
+[Thread-1] Verificando Recurso 3 (Duração: 2404ms)...
+[Thread-0] FIM: Configuração de Logs concluída.
+[Thread-1] Verificando Recurso 4 (Duração: 2460ms)...
+[Thread-1] Verificando Recurso 5 (Duração: 1331ms)...
+[Thread-1] FIM: Verificação concluída.
+
+real	0m9.651s
+user	0m0.062s
+sys	0m0.044s
+
+Q2) Em relação ao código anterior, as threads são nomeadas de forma explícita nos logs de execução. Sim, há diferença, pois torna-se mais simples compreender qual thread está tendo acesso aos recursos da CPU em cada momento, especialmente em relação às tarefas que cada uma executa.
+
+Q3) Em relação ao início da execução, a thread main é sempre executada antes das outras threads (no início do programa). Por outro lado, não é possível garantir quando a thread main é finalizada em relação às threads 0 e 1. Isso porque não existe nenhuma instrução explícita que faça com que a thread main espere pelo término das outras.
+
+Q4) Sim. Após a mudança, a thread main espera pelas outhras duas threads para ser finalizada.
+
+[main] --- INÍCIO DO PROGRAMA JAVA ---
+[main] Inicialização de tarefas concorrentes solicitada.
+[logs-thread] INÍCIO: Configuração de Logs...
+[check-thread] INÍCIO: Verificação de Recursos.
+[check-thread] Verificando Recurso 1 (Duração: 1502ms)...
+[check-thread] Verificando Recurso 2 (Duração: 2555ms)...
+[logs-thread] FIM: Configuração de Logs concluída.
+[check-thread] Verificando Recurso 3 (Duração: 1972ms)...
+[check-thread] Verificando Recurso 4 (Duração: 2823ms)...
+[check-thread] Verificando Recurso 5 (Duração: 1238ms)...
+[check-thread] FIM: Verificação concluída.
+[main] --- FIM DO PROGRAMA JAVA (Main terminou) ---
+
+real	0m10.154s
+user	0m0.051s
+sys	0m0.057s
