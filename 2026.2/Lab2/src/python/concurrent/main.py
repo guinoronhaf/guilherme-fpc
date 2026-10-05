@@ -16,6 +16,7 @@ class Classes:
         self._next_id_counter = 1
         self.class_ids: List[int] = list(range(1, num_classes + 1))
         self.num_students_per_class: int = num_students_per_class
+        self.highest_grades: Dict[int, float] = {}
 
         self.semester_registry: Dict[str, Dict[str, Optional[Any]]] = self._generate_semester_registry()
 
@@ -51,15 +52,21 @@ class Classes:
 
         their_alumni = self.get_students_in_class(class_id)
 
+        highest = 0.0
+
         for student_id in their_alumni:
             time.sleep(random.uniform(0.2, 0.5))
 
             grade = self._generate_student_grade()
             self.semester_registry[student_id]["final_grade"] = grade
 
+            if float(grade) > highest:
+                highest = float(grade)
+
             print(f"{professor} corrected Student {student_id} from class {class_id} - Grade: {grade}")
             time.sleep(random.uniform(0.1, 0.3))
 
+        self.highest_grades[class_id] = highest
         print(f"{professor}'s class {class_id} grades successfully processed!\n")
 
     def registry_to_string(self, class_id: int) -> None:
@@ -73,6 +80,8 @@ class Classes:
                 f"class_id: {class_id}, "
                 f"final_grade: {self.semester_registry[student_id]['final_grade']}"
             )
+
+        print(f"A maior nota da turma {class_id} foi {self.highest_grades[class_id]}!")
 
 
 if __name__ == "__main__":
@@ -92,6 +101,7 @@ if __name__ == "__main__":
 
     for class_id in semester.class_ids:
         t = threading.Thread(target=semester.process_grades, args=(class_id,))
+        t.start()
         threads.append(t)
     
     for t in threads:
