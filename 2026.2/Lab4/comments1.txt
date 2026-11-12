@@ -1,0 +1,31 @@
+-- Etapa 1 --
+De um modo geral, através da solução concorrente implementada, é possível perceber redução dos tempos de execução (real) em função da utilização de concorrência para resolução do problema proposto.
+
+Considerando a imagem no path data/14MB_noise.jpg, tem-se:
+
+1) Solução serial:
+real    0m41,157s
+user    0m41,164s
+sys     0m0,472s
+
+2) Solução concorrente com 2 threads:
+real    0m20,629s
+user    0m40,082s
+sys     0m0,437s
+
+3) Solução concorrente com 4 threads:
+real    0m11,337s
+user    0m41,511s
+sys     0m0,606
+
+4) Solução concorrente com 8 threads:
+real    0m8,730s
+user    0m57,314s
+sys     0m0,542
+
+5) Solução concorrente com 10 threads:
+real    0m15,583s
+user    2m0,077s
+sys     0m0,758s
+
+É importante notar que com um número maior do que 8 threads o tempo total decorrido (real) é bastante deteriorado, com aumento significativo no tempo user, que reflete o tempo total que o processo gastou utilizando a CPU em modo usuário. Isso pode indicar excessivas trocas de contexto, com cada uma das 10 threads ganhando e perdendo a CPU várias vezes antes de concluir seu trabalho.

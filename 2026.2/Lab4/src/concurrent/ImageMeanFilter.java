@@ -1,8 +1,6 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.Semaphore;
-
 import javax.imageio.ImageIO;
 
 /**
@@ -22,8 +20,6 @@ import javax.imageio.ImageIO;
  * <p>Author: temmanuel@comptuacao.ufcg.edu.br</p>
  */
 public class ImageMeanFilter {
-
-	private static Semaphore mutex = new Semaphore(1);
     
     /**
      * Applies mean filter to an image
@@ -33,7 +29,7 @@ public class ImageMeanFilter {
      * @param kernelSize Size of mean kernel
      * @throws IOException If there is an error reading/writing
      */
-    public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize, int n_threads) throws IOException {
+		public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize, int n_threads) throws IOException {
         // Load image
         BufferedImage originalImage = ImageIO.read(new File(inputPath));
         
@@ -51,16 +47,9 @@ public class ImageMeanFilter {
 		Thread[] threads = new Thread[n_threads];
 
 		for (int i = 0; i < n_threads; i++) {
-			threads[i] = new Thread(new Worker(originalImage, filteredImage, width, i*height/n_threads, (i+1)*height/n_threads, kernelSize, i));
+			Worker work = new Worker(originalImage, filteredImage, i*height/n_threads, (i+1)*height/n_threads, width, kernelSize);
+			threads[i] = new Thread(work);
 			threads[i].start();
-		}
-
-		for (Thread t : threads) {
-			try {
-				t.join();
-			} catch (Exception e) {
-				System.err.println("erro");
-			}
 		}
 
         // Process each pixel
@@ -77,6 +66,14 @@ public class ImageMeanFilter {
         //         );
         //     }
         // }
+		
+		for (Thread t : threads) {
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
         
         // Save filtered image
         ImageIO.write(filteredImage, "jpg", new File(outputPath));
@@ -156,6 +153,12 @@ public class ImageMeanFilter {
 
         String inputFile = args[0];
 		int n_threads = Integer.parseInt(args[1]);
+
+		if (n_threads < 2) {
+			System.err.println("Número de threads menor do que 2! Abortando...");
+			System.exit(1);
+		}
+
         try {
             applyMeanFilter(inputFile, "filtered_output.jpg", 7, n_threads);
         } catch (IOException e) {
@@ -164,42 +167,31 @@ public class ImageMeanFilter {
     }
 
 	static class Worker implements Runnable {
-
 		private BufferedImage originalImage;
 		private BufferedImage filteredImage;
-		private int width;
 		private int startY;
 		private int endY;
+		private int width;
 		private int kernelSize;
 
-		public Worker(BufferedImage originalImage, BufferedImage filteredImage, int width, int startY, int endY, int kernelSize) {
+		public Worker(BufferedImage originalImage, BufferedImage filteredImage, int startY, int endY, int width, int kernelSize) {
 			this.originalImage = originalImage;
 			this.filteredImage = filteredImage;
-			this.width = width;
 			this.startY = startY;
 			this.endY = endY;
+			this.width = width;
 			this.kernelSize = kernelSize;
 		}
 
 		@Override
 		public void run() {
+			// Process each pixel
 			for (int y = startY; y < endY; y++) {
 				for (int x = 0; x < width; x++) {
 					// Calculate neighborhood average
 					int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
 					
 					// Set filtered pixel
-					// try {
-					// 	mutex.acquire();
-					// 	filteredImage.setRGB(x, y, 
-					// 		(avgColor[0] << 16) | 
-					// 		(avgColor[1] << 8)  | 
-					// 		avgColor[2]
-					// 	);
-					// 	mutex.release();
-					// } catch (Exception e) {
-					// 	System.err.println("erro");
-					// }
 					filteredImage.setRGB(x, y, 
 						(avgColor[0] << 16) | 
 						(avgColor[1] << 8)  | 
@@ -208,6 +200,5 @@ public class ImageMeanFilter {
 				}
 			}
 		}
-
 	}
 }
