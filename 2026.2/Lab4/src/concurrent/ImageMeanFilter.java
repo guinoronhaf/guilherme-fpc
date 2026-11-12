@@ -1,6 +1,8 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+
 import javax.imageio.ImageIO;
 
 /**
@@ -20,6 +22,8 @@ import javax.imageio.ImageIO;
  * <p>Author: temmanuel@comptuacao.ufcg.edu.br</p>
  */
 public class ImageMeanFilter {
+
+	private static Semaphore mutex = new Semaphore(1);
     
     /**
      * Applies mean filter to an image
@@ -29,7 +33,7 @@ public class ImageMeanFilter {
      * @param kernelSize Size of mean kernel
      * @throws IOException If there is an error reading/writing
      */
-    public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize) throws IOException {
+    public static void applyMeanFilter(String inputPath, String outputPath, int kernelSize, int n_threads) throws IOException {
         // Load image
         BufferedImage originalImage = ImageIO.read(new File(inputPath));
         
@@ -43,20 +47,36 @@ public class ImageMeanFilter {
         // Image processing
         int width = originalImage.getWidth();
         int height = originalImage.getHeight();
+
+		Thread[] threads = new Thread[n_threads];
+
+		for (int i = 0; i < n_threads; i++) {
+			threads[i] = new Thread(new Worker(originalImage, filteredImage, width, i*height/n_threads, (i+1)*height/n_threads, kernelSize, i));
+			threads[i].start();
+		}
+
+		for (Thread t : threads) {
+			try {
+				t.join();
+			} catch (Exception e) {
+				System.err.println("erro");
+			}
+		}
+
         // Process each pixel
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // Calculate neighborhood average
-                int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
-                
-                // Set filtered pixel
-                filteredImage.setRGB(x, y, 
-                    (avgColor[0] << 16) | 
-                    (avgColor[1] << 8)  | 
-                    avgColor[2]
-                );
-            }
-        }
+        // for (int y = 0; y < height; y++) {
+        //     for (int x = 0; x < width; x++) {
+        //         // Calculate neighborhood average
+        //         int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
+        //         
+        //         // Set filtered pixel
+        //         filteredImage.setRGB(x, y, 
+        //             (avgColor[0] << 16) | 
+        //             (avgColor[1] << 8)  | 
+        //             avgColor[2]
+        //         );
+        //     }
+        // }
         
         // Save filtered image
         ImageIO.write(filteredImage, "jpg", new File(outputPath));
@@ -135,10 +155,59 @@ public class ImageMeanFilter {
         }
 
         String inputFile = args[0];
+		int n_threads = Integer.parseInt(args[1]);
         try {
-            applyMeanFilter(inputFile, "filtered_output.jpg", 7);
+            applyMeanFilter(inputFile, "filtered_output.jpg", 7, n_threads);
         } catch (IOException e) {
             System.err.println("Error processing image: " + e.getMessage());
         }
     }
+
+	static class Worker implements Runnable {
+
+		private BufferedImage originalImage;
+		private BufferedImage filteredImage;
+		private int width;
+		private int startY;
+		private int endY;
+		private int kernelSize;
+
+		public Worker(BufferedImage originalImage, BufferedImage filteredImage, int width, int startY, int endY, int kernelSize) {
+			this.originalImage = originalImage;
+			this.filteredImage = filteredImage;
+			this.width = width;
+			this.startY = startY;
+			this.endY = endY;
+			this.kernelSize = kernelSize;
+		}
+
+		@Override
+		public void run() {
+			for (int y = startY; y < endY; y++) {
+				for (int x = 0; x < width; x++) {
+					// Calculate neighborhood average
+					int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
+					
+					// Set filtered pixel
+					// try {
+					// 	mutex.acquire();
+					// 	filteredImage.setRGB(x, y, 
+					// 		(avgColor[0] << 16) | 
+					// 		(avgColor[1] << 8)  | 
+					// 		avgColor[2]
+					// 	);
+					// 	mutex.release();
+					// } catch (Exception e) {
+					// 	System.err.println("erro");
+					// }
+					filteredImage.setRGB(x, y, 
+						(avgColor[0] << 16) | 
+						(avgColor[1] << 8)  | 
+						avgColor[2]
+					);
+				}
+			}
+		}
+
+	}
 }
