@@ -1,6 +1,8 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+
 import javax.imageio.ImageIO;
 
 /**
@@ -20,6 +22,10 @@ import javax.imageio.ImageIO;
  * <p>Author: temmanuel@comptuacao.ufcg.edu.br</p>
  */
 public class ImageMeanFilter {
+
+	private static int pixelsDiferentes;
+	private static int pixelsIguais;
+	private static Semaphore mutex = new Semaphore(1);
     
     /**
      * Applies mean filter to an image
@@ -161,6 +167,8 @@ public class ImageMeanFilter {
 
         try {
             applyMeanFilter(inputFile, "filtered_output.jpg", 7, n_threads);
+			System.out.println("Pixels modificados: " + pixelsDiferentes);
+			System.out.println("Pixels não alterados: " + pixelsIguais);
         } catch (IOException e) {
             System.err.println("Error processing image: " + e.getMessage());
         }
@@ -173,6 +181,8 @@ public class ImageMeanFilter {
 		private int endY;
 		private int width;
 		private int kernelSize;
+		private int pixelsDiferentesLocal;
+		private int pixelsIguaisLocal;
 
 		public Worker(BufferedImage originalImage, BufferedImage filteredImage, int startY, int endY, int width, int kernelSize) {
 			this.originalImage = originalImage;
@@ -190,6 +200,8 @@ public class ImageMeanFilter {
 				for (int x = 0; x < width; x++) {
 					// Calculate neighborhood average
 					int[] avgColor = calculateNeighborhoodAverage(originalImage, x, y, kernelSize);
+
+					int old_rgb = originalImage.getRGB(x, y);
 					
 					// Set filtered pixel
 					filteredImage.setRGB(x, y, 
@@ -197,7 +209,26 @@ public class ImageMeanFilter {
 						(avgColor[1] << 8)  | 
 						avgColor[2]
 					);
+
+					int new_rgb = filteredImage.getRGB(x, y);
+
+					if (old_rgb != new_rgb) {
+						pixelsDiferentesLocal++;
+					} else {
+						pixelsIguaisLocal++;
+					}
+
 				}
+			}
+
+			try {
+				mutex.acquire();
+				pixelsDiferentes += pixelsDiferentesLocal;
+				pixelsIguais += pixelsIguaisLocal;
+			} catch (Exception e) {
+				System.err.println("Erro");
+			} finally {
+				mutex.release();
 			}
 		}
 	}
